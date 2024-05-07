@@ -1,339 +1,101 @@
-import { trpc } from '../utils/trpc';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { signIn, signOut, useSession } from 'next-auth/react';
-import Head from 'next/head';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { signIn, useSession } from 'next-auth/react';
+import Image from 'next/image';
+import { useRouter } from 'next/router';
+import { useEffect } from 'react';
+import Spinner from './utilities/spinner';
+import styles from '../styles/styles.module.css';
 
-function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
-  const addPost = trpc.post.add.useMutation();
-  const { data: session } = useSession();
-  const [message, setMessage] = useState('');
-  const [enterToPostMessage, setEnterToPostMessage] = useState(true);
-  async function postMessage() {
-    const input = {
-      text: message,
-    };
-    try {
-      await addPost.mutateAsync(input);
-      setMessage('');
-      onMessagePost();
-    } catch {}
-  }
+export default function Home() {
+  //Obtenemos la sesión de la bd
+  const { data: session, status } = useSession();
 
-  const isTyping = trpc.post.isTyping.useMutation();
+  //Inicialización de ruta
+  const router = useRouter();
 
-  const userName = session?.user?.name;
-  if (!userName) {
-    return (
-      <div className="flex w-full justify-between rounded bg-gray-800 px-3 py-2 text-lg text-gray-200">
-        <p className="font-bold">
-          You have to{' '}
-          <button
-            className="inline font-bold underline"
-            onClick={() => signIn()}
-          >
-            sign in
-          </button>{' '}
-          to write.
-        </p>
-        <button
-          onClick={() => signIn()}
-          data-testid="signin"
-          className="h-full rounded bg-indigo-500 px-4"
-        >
-          Sign In
-        </button>
-      </div>
-    );
-  }
-  return (
-    <>
-      <form
-        onSubmit={async (e) => {
-          e.preventDefault();
-          /**
-           * In a real app you probably don't want to use this manually
-           * Checkout React Hook Form - it works great with tRPC
-           * @link https://react-hook-form.com/
-           */
-          await postMessage();
-        }}
-      >
-        <fieldset disabled={addPost.isLoading} className="min-w-0">
-          <div className="flex w-full items-end rounded bg-gray-500 px-3 py-2 text-lg text-gray-200">
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              className="flex-1 bg-transparent outline-0"
-              rows={message.split(/\r|\n/).length}
-              id="text"
-              name="text"
-              autoFocus
-              onKeyDown={async (e) => {
-                if (e.key === 'Shift') {
-                  setEnterToPostMessage(false);
-                }
-                if (e.key === 'Enter' && enterToPostMessage) {
-                  void postMessage();
-                }
-                isTyping.mutate({ typing: true });
-              }}
-              onKeyUp={(e) => {
-                if (e.key === 'Shift') {
-                  setEnterToPostMessage(true);
-                }
-              }}
-              onBlur={() => {
-                setEnterToPostMessage(true);
-                isTyping.mutate({ typing: false });
-              }}
-            />
-            <div>
-              <button type="submit" className="rounded bg-indigo-500 px-4 py-1">
-                Submit
-              </button>
-            </div>
-          </div>
-        </fieldset>
-        {addPost.error && (
-          <p style={{ color: 'red' }}>{addPost.error.message}</p>
-        )}
-      </form>
-    </>
-  );
-}
-
-export default function IndexPage() {
-  const postsQuery = trpc.post.infinite.useInfiniteQuery(
-    {},
-    {
-      getPreviousPageParam: (d) => d.prevCursor,
-    },
-  );
-  const utils = trpc.useContext();
-  const { hasPreviousPage, isFetchingPreviousPage, fetchPreviousPage } =
-    postsQuery;
-
-  // list of messages that are rendered
-  const [messages, setMessages] = useState(() => {
-    const msgs = postsQuery.data?.pages.map((page) => page.items).flat();
-    return msgs;
-  });
-  type Post = NonNullable<typeof messages>[number];
-  const { data: session } = useSession();
-  const userName = session?.user?.name;
-  const scrollTargetRef = useRef<HTMLDivElement>(null);
-
-  // fn to add and dedupe new messages onto state
-  const addMessages = useCallback((incoming?: Post[]) => {
-    setMessages((current) => {
-      const map: Record<Post['id'], Post> = {};
-      for (const msg of current ?? []) {
-        map[msg.id] = msg;
-      }
-      for (const msg of incoming ?? []) {
-        map[msg.id] = msg;
-      }
-      return Object.values(map).sort(
-        (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
-      );
-    });
-  }, []);
-
-  // when new data from `useInfiniteQuery`, merge with current state
+  //Redireccion al usuario a Main
   useEffect(() => {
-    const msgs = postsQuery.data?.pages.map((page) => page.items).flat();
-    addMessages(msgs);
-  }, [postsQuery.data?.pages, addMessages]);
-
-  const scrollToBottomOfList = useCallback(() => {
-    if (scrollTargetRef.current == null) {
+    if (status === 'unauthenticated') {
+      // Aquí puedes mostrar un spinner o cualquier indicador de carga mientras se verifica el estado de autenticación
       return;
     }
-
-    scrollTargetRef.current.scrollIntoView({
-      behavior: 'smooth',
-      block: 'end',
-    });
-  }, [scrollTargetRef]);
-  useEffect(() => {
-    scrollToBottomOfList();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  // subscribe to new posts and add
-  trpc.post.onAdd.useSubscription(undefined, {
-    onData(post) {
-      addMessages([post]);
-    },
-    onError(err) {
-      console.error('Subscription error:', err);
-      // we might have missed a message - invalidate cache
-      utils.post.infinite.invalidate();
-    },
-  });
-
-  const [currentlyTyping, setCurrentlyTyping] = useState<string[]>([]);
-  trpc.post.whoIsTyping.useSubscription(undefined, {
-    onData(data) {
-      setCurrentlyTyping(data);
-    },
-  });
+    if (session) {
+      // Si el usuario está autenticado, redirigir a la página protegida
+      router.replace('/dashboard/products').catch((error) => {
+        // Manejar cualquier error que pueda ocurrir al redirigir
+        console.error('Error al redirigir a la página principal:', error);
+      });
+    }
+  }, [status, session, router]);
 
   return (
     <>
-      <Head>
-        <title>Prisma Starter</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-      <div className="flex h-screen flex-col md:flex-row">
-        <section className="flex w-full flex-col bg-gray-800 md:w-72">
-          <div className="flex-1 overflow-y-hidden">
-            <div className="flex h-full flex-col divide-y divide-gray-700">
-              <header className="p-4">
-                <h1 className="text-3xl font-bold text-gray-50">
-                  tRPC WebSocket starter
-                </h1>
-                <p className="text-sm text-gray-400">
-                  Showcases WebSocket + subscription support
-                  <br />
-                  <a
-                    className="text-gray-100 underline"
-                    href="https://github.com/trpc/examples-next-prisma-starter-websockets"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    View Source on GitHub
-                  </a>
+      {status === 'authenticated' || status === 'loading' ? (
+        <Spinner text="Cargando" />
+      ) : (
+        <div className="h-screen w-screen bg-white flex flex-row items-end pb-12 justify-center bg-[url('/images/wallpaper.jpg')] bg-cover bg-center">
+          {/**Contenedor principal*/}
+          <div
+            className={`flex m-6 flex-col gap-6 p-9 bg-black rounded-lg drop-shadow-lg ${styles.parent}`}
+          >
+            {/**Header */}
+            <div
+              className={`flex-none items-center flex flex-row gap-4 justify-between opacity-100`}
+            >
+              <h1 className="font-poppins text-3xl text-white font-bold">
+                Iniciar sesión
+              </h1>
+              <Image
+                className="h-14 w-14 items-center bg-white rounded-lg p-2"
+                src="/icons/Logo.svg"
+                width={100}
+                height={100}
+                alt="Logo"
+              />
+            </div>
+            <p className="text-base font-light text-white text-justify">
+              Un aplicativo para contratar músicos profesionales. Seleccione el
+              método de autenticación adecuado
+            </p>
+            {/**Body */}
+            <div className="flex flex-col gap-4">
+              {/**Botón de inicio */}
+              <div
+                className={`${styles.parentTextBox} items-center justify-center p-4 cursor-pointer flex flex-row gap-4 w-full h-12 rounded-lg hover:border-transparent hover:bg-red-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2`}
+                onClick={() => {
+                  signIn('google').catch(console.log);
+                }}
+              >
+                <svg className="h-6 fill-pink-500" viewBox="0 0 512 512">
+                  <path d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z" />
+                </svg>
+                <p
+                  className={`text-white text-base font-semibold ${styles.child} opacity-100`}
+                >
+                  {' '}
+                  Iniciar sesión con Google
                 </p>
-              </header>
-              <div className="hidden flex-1 space-y-6 overflow-y-auto p-4 text-gray-400 md:block">
-                <article className="space-y-2">
-                  <h2 className="text-lg text-gray-200">Introduction</h2>
-                  <ul className="list-inside list-disc space-y-2">
-                    <li>Open inspector and head to Network tab</li>
-                    <li>All client requests are handled through WebSockets</li>
-                    <li>
-                      We have a simple backend subscription on new messages that
-                      adds the newly added message to the current state
-                    </li>
-                  </ul>
-                </article>
-                {userName && (
-                  <article>
-                    <h2 className="text-lg text-gray-200">User information</h2>
-                    <ul className="space-y-2">
-                      <li className="text-lg">
-                        You&apos;re{' '}
-                        <input
-                          id="name"
-                          name="name"
-                          type="text"
-                          disabled
-                          className="bg-transparent"
-                          value={userName}
-                        />
-                      </li>
-                      <li>
-                        <button onClick={() => signOut()}>Sign Out</button>
-                      </li>
-                    </ul>
-                  </article>
-                )}
+              </div>
+
+              <div
+                className={`${styles.parentTextBox} items-center justify-center p-4 cursor-pointer flex flex-row gap-4 w-full h-12 rounded-lg hover:border-transparent hover:bg-sky-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2`}
+                onClick={() => {
+                  signIn('facebook').catch(console.log);
+                }}
+              >
+                <svg className="h-6 fill-sky-500" viewBox="0 0 512 512">
+                  <path d="M504 256C504 119 393 8 256 8S8 119 8 256c0 123.78 90.69 226.38 209.25 245V327.69h-63V256h63v-54.64c0-62.15 37-96.48 93.67-96.48 27.14 0 55.52 4.84 55.52 4.84v61h-31.28c-30.8 0-40.41 19.12-40.41 38.73V256h68.78l-11 71.69h-57.78V501C413.31 482.38 504 379.78 504 256z" />
+                </svg>
+                <p
+                  className={`text-white text-base font-semibold ${styles.child} opacity-100`}
+                >
+                  {' '}
+                  Iniciar sesión con facebook
+                </p>
               </div>
             </div>
           </div>
-          <div className="hidden h-16 shrink-0 md:block"></div>
-        </section>
-        <div className="flex-1 overflow-y-hidden md:h-screen">
-          <section className="flex h-full flex-col justify-end space-y-4 bg-gray-700 p-4">
-            <div className="space-y-4 overflow-y-auto">
-              <button
-                data-testid="loadMore"
-                onClick={() => fetchPreviousPage()}
-                disabled={!hasPreviousPage || isFetchingPreviousPage}
-                className="rounded bg-indigo-500 px-4 py-2 text-white disabled:opacity-40"
-              >
-                {isFetchingPreviousPage
-                  ? 'Loading more...'
-                  : hasPreviousPage
-                  ? 'Load More'
-                  : 'Nothing more to load'}
-              </button>
-              <div className="space-y-4">
-                {messages?.map((item) => (
-                  <article key={item.id} className=" text-gray-50">
-                    <header className="flex space-x-2 text-sm">
-                      <h3 className="text-base">
-                        {item.source === 'RAW' ? (
-                          item.name
-                        ) : (
-                          <a
-                            href={`https://github.com/${item.name}`}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            {item.name}
-                          </a>
-                        )}
-                      </h3>
-                      <span className="text-gray-500">
-                        {new Intl.DateTimeFormat('en-GB', {
-                          dateStyle: 'short',
-                          timeStyle: 'short',
-                        }).format(item.createdAt)}
-                      </span>
-                    </header>
-                    <p className="whitespace-pre-line text-xl leading-tight">
-                      {item.text}
-                    </p>
-                  </article>
-                ))}
-                <div ref={scrollTargetRef}></div>
-              </div>
-            </div>
-            <div className="w-full">
-              <AddMessageForm onMessagePost={() => scrollToBottomOfList()} />
-              <p className="h-2 italic text-gray-400">
-                {currentlyTyping.length
-                  ? `${currentlyTyping.join(', ')} typing...`
-                  : ''}
-              </p>
-            </div>
-
-            {process.env.NODE_ENV !== 'production' && (
-              <div className="hidden md:block">
-                <ReactQueryDevtools initialIsOpen={false} />
-              </div>
-            )}
-          </section>
         </div>
-      </div>
+      )}
     </>
   );
 }
-
-/**
- * If you want to statically render this page
- * - Export `appRouter` & `createContext` from [trpc].ts
- * - Make the `opts` object optional on `createContext()`
- *
- * @link https://trpc.io/docs/ssg
- */
-// export const getStaticProps = async (
-//   context: GetStaticPropsContext<{ filter: string }>,
-// ) => {
-//   const ssg = createSSGHelpers({
-//     router: appRouter,
-//     ctx: await createContext(),
-//   });
-//
-//   await ssg.fetchQuery('post.all');
-//
-//   return {
-//     props: {
-//       trpcState: ssg.dehydrate(),
-//       filter: context.params?.filter ?? 'all',
-//     },
-//     revalidate: 1,
-//   };
-// };
