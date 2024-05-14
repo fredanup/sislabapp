@@ -1,3 +1,11 @@
+import Layout from 'pages/utilities/layout';
+
 export default function Products() {
-  return <></>;
+  return (
+    <>
+      <Layout>
+        <p>Hola</p>
+      </Layout>
+    </>
+  );
 }
