@@ -1,28 +1,28 @@
 import ModalLayout from 'pages/utilities/modal-layout';
 import { FormEvent } from 'react';
-import { IUserBranch } from 'utils/auth';
+import { IProductDetail, IUserBranch } from 'utils/auth';
 import { trpc } from 'utils/trpc';
 
-export default function DeleteUserModal({
+export default function DeleteProductModal({
   isOpen,
   onClose,
-  selectedUser,
+  selectedProduct,
 }: {
   isOpen: boolean;
   onClose: () => void;
-  selectedUser: IUserBranch | null;
+  selectedProduct: IProductDetail | null;
 }) {
   const utils = trpc.useContext();
-  const deletedUser = trpc.user.deleteOne.useMutation({
+  const deletedProduct = trpc.product.deleteOne.useMutation({
     onSettled: async () => {
-      await utils.user.findManyUserBranch.invalidate();
+      await utils.product.findManyProduct.invalidate();
     },
   });
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (selectedUser !== null) {
-      deletedUser.mutate({ id: selectedUser!.id });
+    if (selectedProduct !== null) {
+      deletedProduct.mutate({ id: selectedProduct!.id });
       onClose();
     }
   };
@@ -52,11 +52,11 @@ export default function DeleteUserModal({
 
               <div className="w-full flex flex-col gap-2">
                 <h1 className="text-black text-base font-semibold">
-                  Eliminar usuario
+                  Eliminar producto
                 </h1>
                 <p className="text-sm font-light text-gray-500 text-justify">
                   ¿Esta seguro de eliminar el registro seleccionado? Todos los
-                  datos del usuario serán removidos permanentemente del
+                  datos del producto serán removidos permanentemente del
                   servidor. Esta acción no se puede deshacer.
                 </p>
                 <div className="mt-4 pt-4 flex flex-row justify-end gap-2 border-t border-gray-200">

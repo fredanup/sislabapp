@@ -103,7 +103,7 @@ export default function Users() {
                   key={index}
                   onClick={() => handleCardClick(user, index)}
                 >
-                  <td className="py-4 pr-2 flex flex-row gap-3 items-center border-b border-gray-200 text-sm font-light">
+                  <td className="py-4 pr-2 flex flex-row gap-3 items-center text-sm font-light">
                     <Image
                       className="rounded-full"
                       width={50}

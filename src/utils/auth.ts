@@ -29,6 +29,53 @@ export const userBranchSchema = z.object({
 
   });
 
+  export const laboratorySchema = z.object({
+    id:z.string(),
+    name: z.string(),
+  });
+
+  export const presentationSchema = z.object({
+    id:z.string(),
+    presentation: z.string(),
+  });
+  
+
+  export const productSchema=z.object({
+    id:z.string(),
+    name: z.string(),
+    quantity: z.string(),
+    price:z.number(),
+    laboratoryId:z.string().nullable(), 
+    Laboratory: z.object({
+      name:z.string().nullable()
+    }).nullable(),
+    presentationId:z.string().nullable(), 
+    Presentation: z.object({
+      presentation:z.string().nullable()
+    }).nullable(),
+    
+  })
+
+  export const createProductSchema = z.object({  
+    name: z.string(),   
+    quantity: z.string(),
+    price:z.number(),
+    laboratoryId:z.string().nullable(), 
+    presentationId:z.string().nullable(), 
+  });
+
+  export const editProductSchema = createProductSchema.extend({
+    id:z.string(),  
+  });
+
+
+
+
   export type IUserBranch = z.infer<typeof userBranchSchema>;
   export type IEditUserBranch = z.infer<typeof editUserBranchSchema>;
   export type IBranch = z.infer<typeof branchSchema>;
+  export type IProductDetail = z.infer<typeof productSchema>;
+  export type ILaboratory = z.infer<typeof laboratorySchema>;
+  export type IPresentation = z.infer<typeof presentationSchema>;
+  export type IEditProduct = z.infer<typeof editProductSchema>;
+  export type ICreateProduct = z.infer<typeof createProductSchema>;

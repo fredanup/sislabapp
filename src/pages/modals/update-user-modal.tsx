@@ -16,8 +16,6 @@ export default function UpdateUserModal({
   const [lastName, setLastName] = useState<string>('');
   const [role, setRole] = useState<string>('');
   const [branchId, setBranchId] = useState<string>('');
-  //Almacén temporal de Branch
-  const [branch, setBranch] = useState<IBranch>();
 
   const utils = trpc.useContext();
   //Mutación para la base de datos
@@ -40,7 +38,6 @@ export default function UpdateUserModal({
         );
         if (matchedOption) {
           setBranchId(selectedUser.branchId!);
-          setBranch(matchedOption);
         }
       }
     }
@@ -78,7 +75,6 @@ export default function UpdateUserModal({
     : 'hidden';
   return (
     <>
-      {' '}
       {/* Fondo borroso y no interactivo */}
       <div className={overlayClassName}></div>
       <form

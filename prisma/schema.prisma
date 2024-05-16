@@ -28,12 +28,12 @@ model Presentation {
 model Product {
   id             String        @id @default(cuid())
   name           String
-  quantity       Int
+  quantity       String
   price          Float
-  Laboratory     Laboratory?   @relation(fields: [laboratoryId], references: [id])
   laboratoryId   String?
-  Presentation   Presentation? @relation(fields: [presentationId], references: [id])
+  Laboratory     Laboratory?   @relation(fields: [laboratoryId], references: [id])
   presentationId String?
+  Presentation   Presentation? @relation(fields: [presentationId], references: [id])
   examples       Example[]
 }
 
@@ -47,18 +47,18 @@ model Sale {
 }
 
 model Example {
-  id           String   @id @default(cuid())
-  move_type    String
-  move_date    DateTime
-  move_state   DateTime
-  Sale         Sale?    @relation(fields: [saleId], references: [id])
-  saleId       String?
-  Product      Product? @relation(fields: [productId], references: [id])
-  productId    String?
-  Provenance   Branch?  @relation(name: "Provenance", fields: [provenanceId], references: [id])
-  provenanceId String?
-  Destination  Branch?  @relation(name: "Destination", fields: [destinationd], references: [id])
-  destinationd String?
+  id            String   @id @default(cuid())
+  move_type     String
+  move_date     DateTime
+  move_state    DateTime
+  Sale          Sale?    @relation(fields: [saleId], references: [id])
+  saleId        String?
+  Product       Product? @relation(fields: [productId], references: [id])
+  productId     String?
+  Provenance    Branch?  @relation(name: "Provenance", fields: [provenanceId], references: [id])
+  provenanceId  String?
+  Destination   Branch?  @relation(name: "Destination", fields: [destinationId], references: [id])
+  destinationId String?
 }
 
 model Branch {
