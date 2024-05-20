@@ -1,6 +1,7 @@
 import CreateProductModal from 'pages/modals/create-product-modal';
 import DeleteProductModal from 'pages/modals/delete-product-modal';
-import MovementsModal from 'pages/modals/movements-modal';
+import ExamplesModal from 'pages/modals/examples-modal';
+
 import FormTitle from 'pages/utilities/form-title';
 import Layout from 'pages/utilities/layout';
 import { ChangeEvent, useState } from 'react';
@@ -13,6 +14,7 @@ export default function Products() {
   const [editIsOpen, setEditIsOpen] = useState(false);
   //Hook de estado que controla la apertura del modal de eliminación
   const [deleteIsOpen, setDeleteIsOpen] = useState(false);
+
   //Hook de estado que almacena el registro seleccionado
   const [selectedProduct, setSelectedProduct] = useState<IProductDetail | null>(
     null,
@@ -170,9 +172,9 @@ export default function Products() {
           />
         )}
         {movementIsOpen && (
-          <MovementsModal
+          <ExamplesModal
             isOpen={movementIsOpen}
-            onClose={closeDeleteModal}
+            onClose={closeMovementModal}
             selectedProduct={selectedProduct}
           />
         )}

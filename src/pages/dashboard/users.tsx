@@ -26,9 +26,7 @@ export default function Users() {
   //Obtener todos los usuarios creados con su sucursal
   const { data: users, isLoading } = trpc.user.findManyUserBranch.useQuery();
   //Obtener el usuario actual
-  const { data: currentUser } = trpc.user.findOne.useQuery(
-    session?.user?.id ?? '',
-  );
+  const { data: currentUser } = trpc.user.findCurrentOne.useQuery();
 
   //Función de selección de registro y apertura de modal de edición
   const openEditModal = (user: IUserBranch) => {

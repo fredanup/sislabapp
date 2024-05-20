@@ -1,10 +1,11 @@
 import FormTitle from 'pages/utilities/form-title';
 import Layout from 'pages/utilities/layout';
-import { useState } from 'react';
+import { FormEvent, useState } from 'react';
 import { IProductDetail } from 'utils/auth';
 import { trpc } from 'utils/trpc';
+import CreateIncomeModal from './create-income-modal';
 
-export default function MovementsModal({
+export default function ExamplesModal({
   isOpen,
   onClose,
   selectedProduct,
@@ -14,12 +15,17 @@ export default function MovementsModal({
   selectedProduct: IProductDetail | null;
 }) {
   const [search, setSearch] = useState('');
+  //Hook de estado que controla la apertura del modal de edición
+  const [incomeIsOpen, setIncomeIsOpen] = useState(false);
   const utils = trpc.useContext();
   /**
    * Consultas a base de datos
    */
-  //Obtener todos los usuarios creados con su sucursal
-  const { data: examples, isLoading } = trpc.example.findManyProduct.useQuery();
+  //Obtener el usuario actual
+  const { data: currentUser } = trpc.user.findCurrentOne.useQuery();
+  //Obtener todos los ejemplares de la sucursal del usuario actual
+  const { data: userExamples, isLoading } =
+    trpc.example.findUserExamples.useQuery(currentUser?.branchId!);
 
   //Estilizado del fondo detrás del modal. Evita al usuario salirse del modal antes de elegir alguna opción
   const overlayClassName = isOpen
@@ -29,9 +35,19 @@ export default function MovementsModal({
   if (!isOpen) {
     return null; // No renderizar el modal si no está abierto
   }
+  //Función de selección de registro y apertura de modal de edición
+  const openIncomeModal = () => {
+    setIncomeIsOpen(true);
+  };
+  //Función de cierre de modal de edición
+  const closeIncomeModal = () => {
+    setIncomeIsOpen(false);
+  };
 
-  const filteredExamples = examples?.filter((example) => {
-    return example.name.toLowerCase().includes(search.toLowerCase());
+  const filteredExamples = userExamples?.filter((userExamples) => {
+    return userExamples.Product?.name
+      .toLowerCase()
+      .includes(search.toLowerCase());
   });
 
   return (
@@ -42,7 +58,17 @@ export default function MovementsModal({
           <div className={overlayClassName}></div>
           <form className="absolute top-1/2 left-1/2 z-30 w-11/12 -translate-x-1/2 -translate-y-1/2 flex flex-col gap-2 rounded-lg bg-white p-6 drop-shadow-lg">
             {/**Header y botón de cierre */}
-            <FormTitle text="Movimientos" />
+            <div className="flex flex-row justify-between">
+              <FormTitle text="Movimientos" />
+              <svg
+                viewBox="0 0 640 512"
+                className={`h-8 w-8 cursor-pointer fill-gray-500 p-1.5  `}
+                onClick={onClose}
+              >
+                <path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" />
+              </svg>
+            </div>
+
             <div className="items-center flex md:flex-row flex-col gap-4">
               <div className="flex flex-row gap-2 w-full">
                 <svg
@@ -69,13 +95,20 @@ export default function MovementsModal({
                   </svg>
                   <p className="text-gray-500 text-sm cursor-pointer">Ventas</p>
                 </div>
-                <div className="rounded-lg border border-gray-200 px-2 flex flex-col items-center md:flex md:flex-row md:gap-1">
+                <div
+                  className="rounded-lg border border-gray-200 px-2 flex flex-col items-center md:flex md:flex-row md:gap-1"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    openIncomeModal();
+                  }}
+                >
                   <svg
-                    viewBox="0 0 384 512"
+                    viewBox="0 0 448 512"
                     className={`h-8 w-8 cursor-pointer fill-gray-500 p-1.5  `}
                   >
-                    <path d="M169.4 470.6c12.5 12.5 32.8 12.5 45.3 0l160-160c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 370.8 224 64c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 306.7L54.6 265.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l160 160z" />
+                    <path d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32V224H48c-17.7 0-32 14.3-32 32s14.3 32 32 32H192V432c0 17.7 14.3 32 32 32s32-14.3 32-32V288H400c17.7 0 32-14.3 32-32s-14.3-32-32-32H256V80z" />
                   </svg>
+
                   <p className="text-gray-500 text-sm cursor-pointer">
                     Ingreso
                   </p>
@@ -102,30 +135,31 @@ export default function MovementsModal({
                     <th className="py-4 pr-2">Presentación</th>
                     <th className="py-4 pr-2">Cantidad</th>
                     <th className="py-4 pr-2">Precio</th>
-                    <th className="py-4 pr-2">Destino</th>
-                    <th className="py-4 pr-2">Tipo</th>
-                    <th className="py-4 pr-2">Estado</th>
-                    <th className="py-4 pr-2">Fecha de movimiento</th>
+                    <th className="py-4 pr-2">Disponible</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredExamples?.map((examples, index) => (
+                  {filteredExamples?.map((example, index) => (
                     <>
                       <tr
                         className="border-b border-gray-200 text-sm font-light"
                         key={index}
                       >
-                        <td className="py-4 pr-2">####</td>
-                        <td className="py-4 pr-2">####</td>
-                        <td className="py-4 pr-2">####</td>
-                        <td className="py-4 pr-2">####</td>
-                        <td className="py-4 pr-2">####</td>
-                        <td className="py-4 pr-2">####</td>
-                        <td className="py-4 pr-2">####</td>
-                        <td className="py-4 pr-2">####</td>
-                        <td className="py-4 pr-2">####</td>
-                        <td className="py-4 pr-2">####</td>
-                        <td className="py-4 pr-2">####</td>
+                        <td className="py-4 pr-2">{example.id}</td>
+                        <td className="py-4 pr-2">{example.Product?.name}</td>
+                        <td className="py-4 pr-2">
+                          {example.Product?.Laboratory?.name}
+                        </td>
+                        <td className="py-4 pr-2">
+                          {example.Product?.Presentation?.presentation}
+                        </td>
+                        <td className="py-4 pr-2">
+                          {example.Product?.quantity}
+                        </td>
+                        <td className="py-4 pr-2">{example.Product?.price}</td>
+                        <td className="py-4 pr-2">
+                          {example.isAvailable ? 'Si' : 'No'}
+                        </td>
                       </tr>
                     </>
                   ))}
@@ -133,6 +167,12 @@ export default function MovementsModal({
               </table>
             </div>
           </form>
+          {incomeIsOpen && (
+            <CreateIncomeModal
+              isOpen={incomeIsOpen}
+              onClose={closeIncomeModal}
+            />
+          )}
         </>
       )}
     </>

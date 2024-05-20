@@ -4,26 +4,34 @@ import { createProductSchema, editProductSchema, productSchema } from "utils/aut
 import { z } from "zod";
 
 export const exampleRouter = createTRPCRouter({
-    //Listar a los usuarios con su sucursal adjunta
-    findManyExample: publicProcedure.query(async () => {
+    //Obtener todos los ejemplares de la sucursal del usuario actual
+    findUserExamples: publicProcedure.input(z.string()).query(async ({input}) => {      
       const examples = await prisma.example.findMany({
-        select:{
-          id:true,
-          move_type:true,
-          move_date:true,
-          move_state:true,
-          productId:true,
-          Product:true,
-          saleId:true,
-          Sale:true,
-          provenanceId:true,
-          Provenance:true,
-          destinationId:true,
-          Destination:true
-
+        where:{
+          branchId:input
         },
-   
-
+        select: {
+          id: true,
+          isAvailable: true,
+          Product: {
+            select: {
+              name: true,
+              Laboratory: {
+                select: {
+                  name: true,
+                }
+              },
+              Presentation: {
+                select: {
+                  presentation: true
+                }
+              },
+              quantity: true,
+              price: true
+            }
+          },
+        },
+        
       });
       return examples;
     }),
