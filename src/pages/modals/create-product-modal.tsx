@@ -2,6 +2,8 @@ import FormTitle from 'pages/utilities/form-title';
 import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
 import { IProductDetail } from 'utils/auth';
 import { trpc } from 'utils/trpc';
+import CreateLabModal from './create-lab-modal';
+import CreatePresentationModal from './create-presentation-modal';
 
 export default function CreateProductModal({
   isOpen,
@@ -17,7 +19,8 @@ export default function CreateProductModal({
   const [presentationId, setPresentationId] = useState<string>('');
   const [quantity, setQuantity] = useState<string>('');
   const [price, setPrice] = useState<string>('');
-
+  const [isLabOpen, setIsLabOpen] = useState(false);
+  const [isPresOpen, setIsPresOpen] = useState(false);
   const utils = trpc.useContext();
   //Mutación para la base de datos
   //Obtener todos los usuarios creados con su sucursal
@@ -59,6 +62,22 @@ export default function CreateProductModal({
       }
     }
   }, [laboratories, presentations, selectedProduct]);
+
+  const openLabModal = () => {
+    setIsLabOpen(true);
+  };
+
+  const closeLabModal = () => {
+    setIsLabOpen(false);
+  };
+
+  const openPresModal = () => {
+    setIsPresOpen(true);
+  };
+
+  const closePresModal = () => {
+    setIsPresOpen(false);
+  };
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
@@ -131,7 +150,21 @@ export default function CreateProductModal({
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="text-black text-sm font-bold">Laboratorio:</label>
+            <div className="flex flex-row justify-between items-center">
+              <label className="text-black text-sm font-bold">
+                Laboratorio:
+              </label>
+              <svg
+                viewBox="0 0 512 512"
+                className={`h-8 w-8 cursor-pointer fill-black p-1.5  `}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  openLabModal();
+                }}
+              >
+                <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM232 344V280H168c-13.3 0-24-10.7-24-24s10.7-24 24-24h64V168c0-13.3 10.7-24 24-24s24 10.7 24 24v64h64c13.3 0 24 10.7 24 24s-10.7 24-24 24H280v64c0 13.3-10.7 24-24 24s-24-10.7-24-24z" />
+              </svg>
+            </div>
             <div>
               <select
                 className="block w-full px-4 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -155,9 +188,21 @@ export default function CreateProductModal({
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="text-black text-sm font-bold">
-              Presentación:
-            </label>
+            <div className="flex flex-row justify-between items-center">
+              <label className="text-black text-sm font-bold">
+                Presentación:
+              </label>
+              <svg
+                viewBox="0 0 512 512"
+                className={`h-8 w-8 cursor-pointer fill-black p-1.5  `}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  openPresModal();
+                }}
+              >
+                <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM232 344V280H168c-13.3 0-24-10.7-24-24s10.7-24 24-24h64V168c0-13.3 10.7-24 24-24s24 10.7 24 24v64h64c13.3 0 24 10.7 24 24s-10.7 24-24 24H280v64c0 13.3-10.7 24-24 24s-24-10.7-24-24z" />
+              </svg>
+            </div>
             <div>
               <select
                 className="block w-full px-4 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -223,6 +268,12 @@ export default function CreateProductModal({
           </div>
         </div>
       </form>
+      {isLabOpen && (
+        <CreateLabModal isOpen={isLabOpen} onClose={closeLabModal} />
+      )}
+      {isPresOpen && (
+        <CreatePresentationModal isOpen={isPresOpen} onClose={closePresModal} />
+      )}
     </>
   );
 }

@@ -68,6 +68,53 @@ export const userBranchSchema = z.object({
     id:z.string(),  
   });
 
+  export const createExampleSchema = z.object({  
+    productId: z.string(),   
+    branchId: z.string(),
+    saleId:z.string().nullable(),
+    isAvailable:z.boolean(), 
+    
+  });
+
+  export const createMovementSchema = z.object({  
+    provenanceId:z.string().nullable(),
+    destinationId:z.string().nullable(),
+    exampleId:z.string().nullable()
+  });
+
+
+  export const movementDetailSchema=z.object({  
+    id: z.string(),
+    Product: z.object({
+      name:z.string(),
+      Laboratory: z.object({
+        name:z.string()
+      }).nullable(),
+      Presentation: z.object({
+        presentation:z.string()
+      }).nullable(),
+      quantity:z.string(),
+      price:z.number(),      
+    }),
+    branchId: z.string(),
+  });
+
+  export const saleSchema=z.object({  
+    buyerId: z.string(),
+    discount: z.number(),
+    finalPrice: z.number(),
+
+  });
+
+  export const saleSchemaDetail=z.object({  
+    id:z.string(),
+    buyerId: z.string(),
+    discount: z.number(),
+    finalPrice: z.number(),
+    saleDate:z.date()
+  });
+
+
 
 
 
@@ -79,3 +126,8 @@ export const userBranchSchema = z.object({
   export type IPresentation = z.infer<typeof presentationSchema>;
   export type IEditProduct = z.infer<typeof editProductSchema>;
   export type ICreateProduct = z.infer<typeof createProductSchema>;
+  export type ICreateExample = z.infer<typeof createExampleSchema>;
+  export type ICreateMovement = z.infer<typeof createMovementSchema>;
+  export type IMovementDetail = z.infer<typeof movementDetailSchema>;
+  export type ISale = z.infer<typeof saleSchema>;
+  export type ISaleDetail = z.infer<typeof saleSchemaDetail>;

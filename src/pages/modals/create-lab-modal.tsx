@@ -1,60 +1,52 @@
 import FormTitle from 'pages/utilities/form-title';
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useState } from 'react';
 import { trpc } from 'utils/trpc';
 
-export default function CreateIncomeModal({
+export default function CreateLabModal({
   isOpen,
   onClose,
 }: {
   isOpen: boolean;
   onClose: () => void;
 }) {
-  const [exampleId, setExampleId] = useState('');
+  const [name, setName] = useState<string>('');
 
   const utils = trpc.useContext();
-  /**
-   * Consultas a base de datos
-   */
-
-  //Mutación para la base de datos
-  const createMovement = trpc.movement.createIncomeMovement.useMutation({
+  const createLab = trpc.laboratory.createLab.useMutation({
     onSettled: async () => {
-      await utils.example.findUserExamples.invalidate();
-    },
-    onError: (error) => {
-      console.error('Error creating example:', error);
+      await utils.laboratory.findMany.invalidate();
     },
   });
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    createMovement.mutate(exampleId);
+    const labData = {
+      name: name,
+    };
+
+    createLab.mutate(labData);
 
     onClose();
-    setExampleId('');
+    setName('');
   };
-
   if (!isOpen) {
     return null; // No renderizar el modal si no está abierto
   }
-
   return (
     <div className="fixed inset-0 flex items-center justify-center z-30">
       <form
         className="w-11/12 md:w-1/2 flex flex-col gap-2 rounded-lg bg-white p-6 drop-shadow-lg"
         onSubmit={handleSubmit}
       >
-        <FormTitle text="Nuevo ingreso" />
+        <FormTitle text="Nuevo laboratorio" />
 
         <div className="flex flex-col gap-2">
-          <label className="text-black text-sm font-bold">
-            Código de producto:
-          </label>
+          <label className="text-black text-sm font-bold">Nombre:</label>
           <input
             type="text"
             className="focus:shadow-outline w-full appearance-none rounded-lg border px-2 py-1 leading-tight text-gray-700 focus:outline-none"
-            value={exampleId}
-            onChange={(event) => setExampleId(event.target.value)}
+            value={name}
+            onChange={(event) => setName(event.target.value)}
             required
           />
         </div>

@@ -10,6 +10,8 @@ import { laboratoryRouter } from './laboratory';
 import { presentationRouter } from './presentation';
 import { productRouter } from './product';
 import { exampleRouter } from './example';
+import { movementRouter } from './movement';
+import { saleRouter } from './sale';
 
 export const appRouter = createTRPCRouter({
   healthcheck: publicProcedure.query(() => 'yay!'),
@@ -19,6 +21,8 @@ export const appRouter = createTRPCRouter({
   presentation:presentationRouter,
   product:productRouter,
   example:exampleRouter,
+  movement:movementRouter,
+  sale:saleRouter,
   randomNumber: publicProcedure.subscription(() => {
     return observable<number>((emit) => {
       const int = setInterval(() => {

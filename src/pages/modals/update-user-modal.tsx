@@ -2,6 +2,7 @@ import FormTitle from 'pages/utilities/form-title';
 import { FormEvent, useEffect, useState } from 'react';
 import { IBranch, IUserBranch } from 'utils/auth';
 import { trpc } from 'utils/trpc';
+import CreateBranchModal from './create-branch-modal';
 
 export default function UpdateUserModal({
   isOpen,
@@ -16,7 +17,7 @@ export default function UpdateUserModal({
   const [lastName, setLastName] = useState<string>('');
   const [role, setRole] = useState<string>('');
   const [branchId, setBranchId] = useState<string>('');
-
+  const [isBranchOpen, setIsOpenBranch] = useState(false);
   const utils = trpc.useContext();
   //Mutación para la base de datos
   //Obtener todos los usuarios creados con su sucursal
@@ -42,6 +43,15 @@ export default function UpdateUserModal({
       }
     }
   }, [branchs, selectedUser]);
+
+  //Función de selección de registro y apertura de modal de edición
+  const openBranchModal = () => {
+    setIsOpenBranch(true);
+  };
+  //Función de cierre de modal de edición
+  const closeBranchModal = () => {
+    setIsOpenBranch(false);
+  };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -152,7 +162,20 @@ export default function UpdateUserModal({
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="text-black text-sm font-bold">Sucursal:</label>
+            <div className="flex flex-row justify-between items-center">
+              <label className="text-black text-sm font-bold">Sucursal:</label>
+              <svg
+                viewBox="0 0 512 512"
+                className={`h-8 w-8 cursor-pointer fill-black p-1.5  `}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  openBranchModal();
+                }}
+              >
+                <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM232 344V280H168c-13.3 0-24-10.7-24-24s10.7-24 24-24h64V168c0-13.3 10.7-24 24-24s24 10.7 24 24v64h64c13.3 0 24 10.7 24 24s-10.7 24-24 24H280v64c0 13.3-10.7 24-24 24s-24-10.7-24-24z" />
+              </svg>
+            </div>
+
             <div>
               <select
                 className="block w-full px-4 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -190,6 +213,9 @@ export default function UpdateUserModal({
           </div>
         </div>
       </form>
+      {isBranchOpen && (
+        <CreateBranchModal isOpen={isBranchOpen} onClose={closeBranchModal} />
+      )}
     </>
   );
 }

@@ -1,6 +1,6 @@
 import { prisma } from "server/prisma";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "server/trpc";
-import { createProductSchema, editProductSchema, productSchema } from "utils/auth";
+import { createExampleSchema, createProductSchema, editProductSchema, productSchema } from "utils/auth";
 import { z } from "zod";
 
 export const exampleRouter = createTRPCRouter({
@@ -8,7 +8,8 @@ export const exampleRouter = createTRPCRouter({
     findUserExamples: publicProcedure.input(z.string()).query(async ({input}) => {      
       const examples = await prisma.example.findMany({
         where:{
-          branchId:input
+          branchId:input,
+          isAvailable:true
         },
         select: {
           id: true,
@@ -30,8 +31,9 @@ export const exampleRouter = createTRPCRouter({
               price: true
             }
           },
+          branchId:true
         },
-        
+       
       });
       return examples;
     }),
@@ -42,17 +44,15 @@ export const exampleRouter = createTRPCRouter({
     }),
 
     createExample: protectedProcedure
-    .input(createProductSchema)
+    .input(createExampleSchema)
     .mutation(async ({ ctx, input }) => {
       try {
-        await ctx.prisma.product.create({          
+        await ctx.prisma.example.create({          
           data: {                
-              name: input.name,                
-              quantity: input.quantity,
-              price:input.price,
-              laboratoryId:input.laboratoryId, 
-              presentationId:input.presentationId,   
-              
+              productId: input.productId,                
+              branchId: input.branchId,
+              saleId:input.saleId,
+              isAvailable:input.isAvailable,               
           },
         });
       } catch (error) {
@@ -61,34 +61,55 @@ export const exampleRouter = createTRPCRouter({
     }),
 
     updateExample: protectedProcedure
-      .input(editProductSchema)
-      .mutation(async ({ ctx, input }) => {
-        try {
-          await ctx.prisma.product.update({
-            where: { id: input.id },
-            data: {                
-                name: input.name,                
-                quantity: input.quantity,
-                price:input.price,
-                laboratoryId:input.laboratoryId, 
-                presentationId:input.presentationId,   
-            },
-          });
-        } catch (error) {
-          console.log(error);
-        }
-      }),
-
-    deleteOne:  protectedProcedure
-    .input(z.object({ id: z.string() }))
+    .input(z.object({
+      saleId: z.string(),
+      exampleId: z.string(),
+    }))
     .mutation(async ({ ctx, input }) => {
       try {
-        await ctx.prisma.product.delete({
-          where: { id: input.id },
+        const { saleId, exampleId } = input; // Destructurar los valores de entrada
+        await ctx.prisma.example.update({ 
+          where: { id: exampleId }, // Usar exampleId para buscar el ejemplo
+          data: {                
+            saleId: saleId,
+            isAvailable: false,               
+          },
         });
-        
       } catch (error) {
-        console.log(error);
+        console.error(error);
       }
     }),
+
+    findSoldExamples: publicProcedure.input(z.string()).query(async ({input}) => {      
+      const examples = await prisma.example.findMany({
+        where:{
+          saleId:input,          
+        },
+        select: {
+          id: true,          
+          Product: {
+            select: {
+              name: true,
+              Laboratory: {
+                select: {
+                  name: true,
+                }
+              },
+              Presentation: {
+                select: {
+                  presentation: true
+                }
+              },
+              quantity: true,
+              price: true
+            }
+          },
+          
+        },
+       
+      });
+      return examples;
+    }),
+  
+
   });
