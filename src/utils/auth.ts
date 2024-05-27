@@ -131,3 +131,4 @@ export const userBranchSchema = z.object({
   export type IMovementDetail = z.infer<typeof movementDetailSchema>;
   export type ISale = z.infer<typeof saleSchema>;
   export type ISaleDetail = z.infer<typeof saleSchemaDetail>;
+  
